@@ -1,22 +1,32 @@
-from flask import Flask, request, jsonify
+#Flask 앱 기본 설정.
+from flask import Flask, request, jsonify, render_template
 from influxdb_client import InfluxDBClient
 from models.preprocessing import preprocess_sensor_data
 from models.threshold import ThresholdChecker
 
-app = Flask(__name__)
+#Flask : Python 웹 프레임워크. 웹 API를 쉽게 만들 수 있음.
+#request : 클라이언트에서 들어오는 요청 파라미터를 읽는 기능.
+#jsonify : Python dict → JSON 응답으로 변환.
+#render_template : html파일을 불러오는 함수.
+#InfluxDBClient : 시계열 데이터베이스인 InfluxDB에 연결하기 위한 라이브러리.
+#preprocess_sensor_data : 데이터 전처리 함수 (스케일링, 보정 등).
+#ThresholdChecker : 센서 데이터의 정상/경고/심각 여부를 판단하는 클래스.
 
-# ---- InfluxDB 연결 설정 ----
+app = Flask(__name__) #Flask 앱 객체를 생성.
+
+# ---- InfluxDB 연결 설정 ---- (influxDB는 url, 인증토큰, 조직면, 버킷 정보가 필요함.)
 INFLUX_URL = "http://localhost:8086"
 INFLUX_TOKEN = "eoHq8OwyRkcNPgQXCi4N2zKZEXhRLfebFENNe9XmOn4NQ1N6SU8J54IcRCShpwURxUWhJ0JgR832s_MAsM4n-Q=="
 INFLUX_ORG = "meit"
 INFLUX_BUCKET = "meit"
 
 client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
-query_api = client.query_api()
+query_api = client.query_api() #flux 쿼리를 실행하는 인터페이스.
 
 # ---- 최근 센서 데이터 조회 + 전처리 + 이상 판단 ----
 @app.route("/api/sensor/latest", methods=["GET"])
-def get_latest_sensor():
+
+def get_latest_sensor(): #/api/sensor/latest 경로에 get요청을 보내면 이 함수 실행됨.
     """
     Query Parameters:
         - sensor_id (optional): 특정 센서만 조회
@@ -65,3 +75,20 @@ def get_latest_sensor():
 
 if __name__ == "__main__":
     app.run("0.0.0.0", port=5000, debug=True)
+
+
+
+
+
+
+
+@app.route("/")
+def user_page():
+    return render_template("user.html")
+
+@app.route("/admin")
+def admin_page():
+    return render_template("admin.html")
+
+if __name__ == "__main__":
+    app.run(debug=True)
