@@ -42,6 +42,7 @@
                 display: flex;
                 flex: 1; /* 남은 공간 전부 차지 */
                 gap: 10px;
+                height: calc(100vh - 10vh - 20px);
             }
 
             .left {
@@ -87,7 +88,6 @@
                 list-style: none; /* 리스트 불릿 제거 */
                 padding: 10px; /* 기본 여백 제거 */
                 /* margin-top: 50%; */
-                border: 1px solid white;
             }
 
             .manipulate li {
@@ -115,11 +115,26 @@
             .그대로가져오기 {
                 justify-content: left;
                 width: 80vw;
+                border: 1px solid white;
             }
             .realmain {
                 display: flex;
                 flex: 1; /* 남은 공간 전부 차지 */
                 gap: 10px;
+            }
+            .UIadd {
+                display: flex;
+                flex-direction: column; /* 세로로 나누기 */
+                width: 20vw;
+                border: 1px solid white;
+                flex: 1;
+                gap: 10px; /* 위아래 간격 */
+            }
+
+            .UIadd iframe {
+                flex: 1; /* 각각 절반 높이 */
+                width: 100%;
+                border: none;
             }
         </style>
     </head>
@@ -200,7 +215,7 @@
                         </div>
                     </div>
                 </div>
-                <div>
+                <div class="UIadd">
                     <div>
                         <iframe
                             src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
