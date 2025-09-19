@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <title>사용자 화면</title>
+        <style>
+            body {
+                margin: 0;
+                background: #111;
+                height: 100vh; /* 전체 화면 높이 */
+                display: flex;
+                flex-direction: column;
+            }
+            .container {
+                display: flex;
+                flex-direction: column;
+                flex: 1;
+                gap: 10px;
+                padding: 10px;
+            }
+            .top {
+                display: flex;
+                flex-direction: row;
+                color: white;
+                border: 1px solid white;
+                height: 10vh;
+                padding-left: 40px;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .화면전환 {
+                display: flex;
+                flex-direction: row;
+                border: 1px solid white;
+                text-align: center;
+                gap: 10px;
+                padding: 10px;
+                align-items: center;
+            }
+
+            .main {
+                display: flex;
+                flex: 1; /* 남은 공간 전부 차지 */
+                gap: 10px;
+            }
+
+            .left {
+                flex: 55; /* 비율로 설정 */
+            }
+
+            .right {
+                flex: 45;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .right > div {
+                display: flex;
+                gap: 10px;
+                flex: 1; /* 세로 공간 균등 분배 */
+            }
+
+            iframe {
+                width: 100%;
+                height: 100%;
+                border: none;
+            }
+
+            .now_status_manipulate {
+                display: inline;
+            }
+            .now_status {
+                width: 50%;
+            }
+            /* 수정해야함.  */
+            .manipulate {
+                color: white;
+                border: 1px solid white;
+                width: 50%;
+                display: inline;
+                text-align: center;
+                justify-content: center; /* 가로 가운데 정렬 */
+                align-items: center; /* 가로 가운데 정렬 */
+            }
+            .manipulate ul {
+                list-style: none; /* 리스트 불릿 제거 */
+                padding: 10px; /* 기본 여백 제거 */
+                /* margin-top: 50%; */
+                border: 1px solid white;
+            }
+
+            .manipulate li {
+                border: 1px solid white;
+                display: flex; /* flex로 가로 정렬 */
+                justify-content: center; /* 가로 가운데 정렬 */
+                align-items: center; /* 가로 가운데 정렬 */
+                gap: 10px; /* 텍스트와 버튼 사이 간격 */
+                height: 50px; /* 높이 지정 (원하면 조정 가능) */
+                border: 1px solid white;
+            }
+            .in_out_information {
+                width: 50%;
+            }
+            .textzone {
+                width: 50%;
+            }
+            h3 {
+                padding: 0;
+                margin: 0;
+                position: absolute;
+                padding-left: 0;
+                padding-top: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <!-- 상단 긴 박스 -->
+            <div class="top">
+                <div>
+                    <h1>Air Protector</h1>
+                </div>
+                <div class="화면전환">
+                    <h4>사용자화면</h4>
+                    <h4>|</h4>
+                    <h4>관리자화면</h4>
+                </div>
+            </div>
+
+            <div class="main">
+                <!-- 왼쪽 큰 박스 -->
+                <div class="left">
+                    <h3>공기 분석</h3>
+                    <iframe
+                        src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
+                    ></iframe>
+                </div>
+
+                <!-- 오른쪽 영역 -->
+                <div class="right">
+                    <div>
+                        <h3>경고 알림 확인 + 자동제어 기록</h3>
+                        <iframe
+                            src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
+                        ></iframe>
+                    </div>
+
+                    <div class="now_status_manipulate">
+                        <h3>현재상태</h3>
+                        <div class="now_status">
+                            <iframe
+                                src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
+                            ></iframe>
+                        </div>
+                        <div class="manipulate">
+                            <h3>수동제어</h3>
+                            <ul>
+                                <li>
+                                    창문
+                                    <button>on/off</button>
+                                </li>
+                                <li>
+                                    환기 팬
+                                    <button>on/off</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="in_out_information">
+                            <h3>실내외 온도/습도/바람세기</h3>
+                            <iframe
+                                src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
+                            ></iframe>
+                        </div>
+                        <div class="textzone">
+                            <h3>환기시간예측</h3>
+                            <!-- if 환기 할 때 -->
+                            <iframe
+                                src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
+                            ></iframe>
+                            <!-- else (환기 안 할 때)
+                            <h3>설명</h3>                            
+                            <iframe
+                                src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
+                            ></iframe> -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
