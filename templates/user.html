@@ -31,7 +31,7 @@
             .화면전환 {
                 display: flex;
                 flex-direction: row;
-                border: 1px solid white;
+                /* border: 1px solid white; */
                 text-align: center;
                 gap: 10px;
                 padding: 10px;
@@ -73,7 +73,7 @@
             .now_status {
                 width: 50%;
             }
-            /* 수정해야함.  */
+
             .manipulate {
                 color: white;
                 border: 1px solid white;
@@ -85,24 +85,41 @@
             }
             .manipulate ul {
                 list-style: none; /* 리스트 불릿 제거 */
-                padding: 10px; /* 기본 여백 제거 */
-                /* margin-top: 50%; */
-                border: 1px solid white;
+                padding: 10px;
+
+                /* border: 1px solid white; */
+
+                align-content: center;
+                height: 80%;
             }
 
             .manipulate li {
-                border: 1px solid white;
-                display: flex; /* flex로 가로 정렬 */
-                justify-content: center; /* 가로 가운데 정렬 */
-                align-items: center; /* 가로 가운데 정렬 */
-                gap: 10px; /* 텍스트와 버튼 사이 간격 */
+                /* border: 1px solid white; */
+                display: flex;
+                /* justify-content: center;  */
+                text-align: left;
+                align-items: center;
+                justify-content: space-between;
+
                 height: 50px; /* 높이 지정 (원하면 조정 가능) */
-                border: 1px solid white;
+                margin: 10px;
+                text-align: left;
             }
-            .in_out_information {
+            .manipulate li div {
+                /* border: 1px solid red; */
+                text-align: left;
+                margin-left: 30%;
+                font-size: 20px;
+            }
+            .manipulate li button {
+                /* border: 1px solid red; */
+                margin-right: 30%;
+            }
+
+            .textzone {
                 width: 50%;
             }
-            .textzone {
+            .in_out_information {
                 width: 50%;
             }
             h3 {
@@ -111,6 +128,13 @@
                 position: absolute;
                 padding-left: 0;
                 padding-top: 0;
+            }
+            .turn {
+                padding: 0;
+                margin: 0;
+                /* position: absolute; */
+                /* padding-right: 0;
+                padding-bottom: 0; */
             }
         </style>
     </head>
@@ -122,9 +146,9 @@
                     <h1>Air Protector</h1>
                 </div>
                 <div class="화면전환">
-                    <h4>사용자화면</h4>
+                    <h4><a href="user.html">사용자화면</a></h4>
                     <h4>|</h4>
-                    <h4>관리자화면</h4>
+                    <h4><a href="admin.html">관리자화면</a></h4>
                 </div>
             </div>
 
@@ -157,11 +181,11 @@
                             <h3>수동제어</h3>
                             <ul>
                                 <li>
-                                    창문
+                                    <div class="window">ㅤ창문</div>
                                     <button>on/off</button>
                                 </li>
                                 <li>
-                                    환기 팬
+                                    <div>환기 팬</div>
                                     <button>on/off</button>
                                 </li>
                             </ul>
@@ -175,20 +199,49 @@
                             ></iframe>
                         </div>
                         <div class="textzone">
-                            <h3>환기시간예측</h3>
-                            <!-- if 환기 할 때 -->
-                            <iframe
-                                src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
-                            ></iframe>
-                            <!-- else (환기 안 할 때)
-                            <h3>설명</h3>                            
-                            <iframe
-                                src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
-                            ></iframe> -->
+                            <h3 id="ventTitle"></h3>
+                            <iframe id="ventIframe"></iframe>
+                            <button
+                                id="toggleBtn"
+                                style="
+                                    position: absolute;
+                                    bottom: 20px;
+                                    right: 20px;
+                                "
+                            >
+                                전환하기
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </body>
+    <script>
+        // 환기 여부 (true면 환기 중, false면 환기 안 함)
+        let isVentilating = true; //초기상태 👉 실제 값은 센서/백엔드에서 받아오면 됨
+
+        const title = document.getElementById('ventTitle');
+        const iframe = document.getElementById('ventIframe');
+        const toggleBtn = document.getElementById('toggleBtn');
+
+        if (isVentilating) {
+            // 환기할 때
+            title.textContent = '환기시간예측';
+            iframe.src =
+                'http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s';
+        } else {
+            // 환기 안 할 때
+            title.textContent = '가스 설명';
+            iframe.src =
+                'http://localhost:3001/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s';
+        }
+
+        updateIframe();
+
+        toggleBtn.addEventListener('click', () => {
+            isVentilating = !isVentilating; // 상태 토글
+            updateIframe(); // 변경된 상태 반영
+        });
+    </script>
 </html>
