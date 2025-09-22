@@ -73,14 +73,6 @@ def get_latest_sensor(): #/api/sensor/latest 경로에 get요청을 보내면 �
     return jsonify(response)
 
 
-if __name__ == "__main__":
-    app.run("0.0.0.0", port=5000, debug=True)
-
-
-
-
-
-
 
 @app.route("/")
 def user_page():
@@ -91,4 +83,4 @@ def admin_page():
     return render_template("admin.html")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run("0.0.0.0", port=5000, debug=True)
