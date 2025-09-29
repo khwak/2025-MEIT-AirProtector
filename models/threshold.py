@@ -2,6 +2,15 @@
 
 class ThresholdChecker:
     def __init__(self):
+        # last_level 저장
+        self.last_level = {}
+        # 히스테리시스 기준 정의
+        self.hysteresis = {
+            "CO2": {"up": 800, "down": 700},  # normal → warning: 800, warning → normal: 700
+            "CO": {"up": 10, "down": 8},
+            "HCHO": {"up": 80, "down": 60},
+            "TVOC": {"up": 400, "down": 350},
+        }
         # 각 항목별 정상/경고/심각 기준과 메시지 정의
         self.rules = {
             "CO2": {
@@ -88,22 +97,41 @@ class ThresholdChecker:
             if not rule:
                 continue
 
-            if rule["normal"](value):
-                level = "normal"
+            last = self.last_level.get(key, "normal")
+            hyst = self.hysteresis.get(key, {"up": None, "down": None})
+
+            # 히스테리시스 적용
+            if last == "normal":
+                if hyst["up"] is not None and value >= hyst["up"]:
+                    level = "warning"
+                elif rule["normal"](value):
+                    level = "normal"
+                else:
+                    level = "warning"
+            elif last == "warning":
+                if hyst["down"] is not None and value < hyst["down"]:
+                    level = "normal"
+                elif rule["serious"](value):
+                    level = "serious"
+                else:
+                    level = "warning"
+            elif last == "serious":
+                if value <= hyst.get("down_serious", 1000):  # 필요시 down_serious 기준 추가
+                    level = "warning"
+                else:
+                    level = "serious"
+
+            self.last_level[key] = level
+
+            if level == "normal":
                 action = "정상: 조치 불필요"
                 alert = None
-            elif rule["warning"](value):
-                level = "warning"
+            elif level == "warning":
                 action = rule["action"]["warning"]
                 alert = rule["alert"]["warning"]
-            elif rule["serious"](value):
-                level = "serious"
+            else:  # serious
                 action = rule["action"]["serious"]
                 alert = rule["alert"]["serious"]
-            else:
-                level = "unknown"
-                action = "판단 불가"
-                alert = None
 
             results[key] = {
                 "value": value,
