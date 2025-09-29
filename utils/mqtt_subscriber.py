@@ -32,7 +32,15 @@ def fetch_data():
 
     # ---- 쿼리 실행 ----
     df = query_api.query_data_frame(query)
-    df = df.rename(columns={"_time": "timestamp"})  # timestamp 컬럼 이름 맞춤
+    if isinstance(df, list):  # 여러 table 반환된 경우
+        df = pd.concat(df)
+
+    df = df.rename(columns={"_time": "timestamp"})
+    df = df.sort_values("timestamp").reset_index(drop=True)
+
+    # 숫자형 변환
+    for f in fields:
+        df[f] = pd.to_numeric(df[f], errors="coerce")
 
     return df
 

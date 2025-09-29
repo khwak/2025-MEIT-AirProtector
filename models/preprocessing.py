@@ -1,24 +1,35 @@
+# anomaly_detector 입력용
+# 최근 10분 데이터 평균
+
 import pandas as pd
 
-def preprocess_sensor_data(raw_data: dict) -> dict:
+def preprocess_sensor_data(df: pd.DataFrame, window: str = "10T") -> pd.DataFrame:
     """
-    raw_data: { "CO2": {"value": 800, "time": "..."} , "CO": {...}, ... }
-    return: { "CO2": float, "CO": float, ... }  # 전처리된 값만 반환
+    센서 raw 데이터를 받아서 10분 평균으로 집계
+    anomaly_detector 입력용으로 전처리
+    
+    Args:
+        df (pd.DataFrame): timestamp + 센서 필드가 포함된 데이터프레임
+        window (str): 리샘플링 기준 (기본 10분 = "10T")
+    
+    Returns:
+        pd.DataFrame: 10분 단위 평균으로 전처리된 데이터
     """
-    processed = {}
 
-    for key, entry in raw_data.items():
-        try:
-            value = float(entry.get("value", None))
-        except (ValueError, TypeError):
-            value = None
+    if df.empty:
+        return df
 
-        # 단위 변환 예시 (필요시)
-        if key == "HCHO" and value is not None:
-            # µg/m³ -> ppm 변환 가정 (실제 변환식 필요)
-            # 여기서는 단순히 값 그대로 사용
-            processed[key] = value
-        else:
-            processed[key] = value
+    # timestamp를 datetime으로 보장
+    df["timestamp"] = pd.to_datetime(df["timestamp"])
+    df = df.set_index("timestamp")
 
-    return processed
+    # 리샘플링 (10분 평균)
+    df_resampled = df.resample(window).mean()
+
+    # 결측치 처리 (앞 값으로 채우기 → ffill, 필요시 bfill)
+    df_resampled = df_resampled.fillna(method="ffill").fillna(method="bfill")
+
+    # index를 다시 컬럼으로 복원
+    df_resampled = df_resampled.reset_index()
+
+    return df_resampled

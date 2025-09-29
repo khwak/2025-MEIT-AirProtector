@@ -13,9 +13,14 @@ PROCESS_INTERVAL_SECONDS = 300  # 5분
 checker = ThresholdChecker()
 publisher = MqttPublisher(broker=MQTT_BROKER, port=MQTT_PORT, topic=MQTT_TOPIC)
 
+_current_status = {
+    "window": 0,   # 창문 열림 정도
+    "fan_speed": 0    # 환기팬 속도 
+}
+
 def fetch_latest_data(required_fields):
     """
-    InfluxDB에서 최근 1시간 데이터를 가져와서
+    InfluxDB에서 최근 30분 데이터를 가져와서
     ThresholdChecker에 필요한 필드만 추출 (최근 값 기준)
     """
     df = fetch_data()  # mqtt_subscriber.py의 fetch_data() 호출
@@ -29,10 +34,18 @@ def fetch_latest_data(required_fields):
     processed_data = {field: latest_row[field] for field in required_fields if field in latest_row}
     return processed_data
 
+def get_current_status():
+    """
+    현재 창문/팬 상태를 반환
+    Flask에서 /api/ventilation/controll 호출 시 사용
+    """
+    return _current_status
+
 def main():
     """메인 실행 루프"""
     print("실내 환경 데이터 모니터링 및 자동 제어를 시작합니다.")
-    
+
+    global _current_status  # 상태 업데이트 가능하게 설정
     while True:
         try:
             # 1. 데이터 조회 모듈을 통해 최신 데이터 가져오기
@@ -48,8 +61,13 @@ def main():
                 results = checker.check(processed_data)
                 print(f"임계값 분석 결과: {results}")
 
+                if results:
+                    # 전체 상태
+                    _current_status["window"] = int(results.get("window_open", 0))
+                    _current_status["fan_speed"] = int(results.get("fan_speed", 0))
+
                 # 3. MQTT로 제어 결과 발행
-                publisher.publish_results(sensor_id="main_sensor_01", data=results)
+                publisher.publish_results(data=results)
 
         except Exception as e:
             print(f"오류가 발생했습니다: {e}")

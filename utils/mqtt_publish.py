@@ -9,7 +9,7 @@ class MqttPublisher:
         self.client = mqtt.Client()
         self.client.connect(self.broker, self.port, 60)
 
-    def publish_results(self, sensor_id: str, data: dict):
+    def publish_results(self, data: dict):
         """
         data: ThresholdChecker.check() 결과
         """
@@ -28,7 +28,6 @@ class MqttPublisher:
         }
 
         payload = {
-            "sensor_id": sensor_id,
             "status": overall_level,
             "window_open": level_map[overall_level]["window_open"],
             "fan_speed": level_map[overall_level]["fan_speed"],

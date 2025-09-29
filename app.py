@@ -1,8 +1,10 @@
 #Flask 앱 기본 설정.
 from flask import Flask, request, jsonify, render_template
-from influxdb_client import InfluxDBClient
+from utils.mqtt_subscriber import fetch_data
 from models.preprocessing import preprocess_sensor_data
-from models.threshold import ThresholdChecker
+from models.ventilation_predictor import predict_remaining_minutes
+from models.anomaly_detector import detect_anomaly
+from utils.ventilation_controller import get_current_status
 
 #Flask : Python 웹 프레임워크. 웹 API를 쉽게 만들 수 있음.
 #request : 클라이언트에서 들어오는 요청 파라미터를 읽는 기능.
@@ -14,66 +16,63 @@ from models.threshold import ThresholdChecker
 
 app = Flask(__name__) #Flask 앱 객체를 생성.
 
-# ---- InfluxDB 연결 설정 ---- (influxDB는 url, 인증토큰, 조직면, 버킷 정보가 필요함.)
-INFLUX_URL = "http://localhost:8086"
-INFLUX_TOKEN = "eoHq8OwyRkcNPgQXCi4N2zKZEXhRLfebFENNe9XmOn4NQ1N6SU8J54IcRCShpwURxUWhJ0JgR832s_MAsM4n-Q=="
-INFLUX_ORG = "meit"
-INFLUX_BUCKET = "meit"
-
-client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
-query_api = client.query_api() #flux 쿼리를 실행하는 인터페이스.
-
-# ---- 최근 센서 데이터 조회 + 전처리 + 이상 판단 ----
-@app.route("/api/sensor/latest", methods=["GET"])
-
-def get_latest_sensor(): #/api/sensor/latest 경로에 get요청을 보내면 이 함수 실행됨.
+# 창문/환기팬 상태 
+@app.route("/api/ventilation/controll", methods=["GET"])
+def ventilation_controll():
     """
-    Query Parameters:
-        - sensor_id (optional): 특정 센서만 조회
+    {
+        "window": int,       # 창문 열림 정도 
+        "fan_speed": int     # 환기팬 속도 
+    }
     """
-    sensor_id = request.args.get("sensor_id")
-    filter_tag = f'|> filter(fn: (r) => r.device == "{sensor_id}")' if sensor_id else ""
-    
-    # InfluxDB Flux 쿼리
-    query = f'''
-    from(bucket: "{INFLUX_BUCKET}")
-      |> range(start: -1h)
-      |> filter(fn: (r) => r._measurement == "environment")
-      {filter_tag}
-      |> last()
-    '''
-    tables = query_api.query(query, org=INFLUX_ORG)
+    status = get_current_status() 
 
-    # raw 데이터 구성: device -> sensor_type -> {value, time}
-    raw_results = {}
-    for table in tables:
-        for record in table.records:
-            device = record.values.get("device")
-            field = record.values.get("sensor_type")
-            if device not in raw_results:
-                raw_results[device] = {}
-            raw_results[device][field] = {
-                "value": record.get_value(),
-                "time": str(record.get_time())
-            }
-
-    # ---- 전처리 + Threshold 판단 ----
-    response = {}
-    checker = ThresholdChecker()
-
-    for device, data in raw_results.items():
-        processed = preprocess_sensor_data(data)  # 스케일링/정규화 등 전처리
-        analysis = checker.check(processed)       # 표 기반 경고/심각 판단
-        response[device] = {
-            "raw": data,
-            "processed": processed,
-            "analysis": analysis
-        }
-
-    return jsonify(response)
+    return jsonify(status)
 
 
+# 환기 시간 예측
+@app.route("/api/ventilation/predict", methods=["GET"])
+def ventilation_predict():
+    """
+    {
+        0: {"vent_flag": int, "remaining_minutes": int},
+        1: {"vent_flag": int, "remaining_minutes": int},
+        ...
+    }
+    - vent_flag: 환기 필요 여부 (0: 불필요, 1: 필요)
+    - remaining_minutes: 환기 완료까지 예상 남은 시간 (분 단위)
+    """
+    raw_data = fetch_data()
+    if raw_data.empty:
+        return jsonify({"error": "No data available"}), 400
+    latest_row = raw_data.sort_values("timestamp").iloc[-1:] 
+    predictions = predict_remaining_minutes(latest_row)
 
+    return jsonify(predictions)
+
+
+# 센서 이상/고장 감지
+@app.route("/api/anomaly/results", methods=["GET"])
+def anomaly_results():
+    """
+    {
+        "2025-09-29 12:00:00": {"loss_mae": 0.32, "threshold": 0.275, "anomaly": true},
+        "2025-09-29 12:01:00": {"loss_mae": 0.12, "threshold": 0.275, "anomaly": false},
+        ...
+    }
+    - loss_mae: 재구성 오차(MAE)
+    - threshold: 이상 판단 기준
+    - anomaly: True -> 이상 발생, False -> 정상
+    """
+    raw_data = fetch_data()
+    if raw_data.empty:
+        return jsonify({"error": "No data available"}), 400
+    processed = preprocess_sensor_data(raw_data)
+    anomalies = detect_anomaly(processed)
+
+    return jsonify(anomalies)
+
+# UI 페이지
 @app.route("/")
 def user_page():
     return render_template("user.html")
