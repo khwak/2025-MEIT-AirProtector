@@ -36,33 +36,17 @@ def fetch_data():
     if isinstance(df, list):  # 여러 table 반환된 경우
         df = pd.concat(df)
 
-    # ---- DB에 데이터 없으면 테스트용 더미 row 추가 ----
-    if df.empty:
-        import datetime
-        df = pd.DataFrame([{
-            "timestamp": datetime.datetime.now(),
-            "indoor_temp": 25.0,
-            "outdoor_temp": 20.0,
-            "indoor_hum": 50.0,
-            "outdoor_hum": 55.0,
-            "wind_speed": 1.2,
-            "window_open": 0,
-            "fan_speed": 0,
-            "CO2": 1000.0,
-            "CO": 5.0,
-            "HCHO": 0.08,
-            "TVOC": 800.0,
-        }])
 
+    # timestamp 컬럼 정리
     df = df.rename(columns={"_time": "timestamp"})
-    df = df.sort_values("timestamp").reset_index(drop=True)
+    if not df.empty:
+        df = df.sort_values("timestamp").reset_index(drop=True)
 
-    # 숫자형 변환
-    for f in fields:
-        df[f] = pd.to_numeric(df[f], errors="coerce")
-    
-    df = add_cycle_elapsed_time(df)
-
+        # 숫자형 변환
+        for f in fields:
+            df[f] = pd.to_numeric(df[f], errors="coerce")
+        
+        df = add_cycle_elapsed_time(df)
     return df
 
 # ---- 테스트 ----

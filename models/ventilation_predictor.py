@@ -43,10 +43,10 @@ def predict_remaining_minutes(raw_data: pd.DataFrame):
 
     # JSON 형태로 변환
     results = {}
-    for idx, row in df_scaled.iterrows():
-        results[idx] = {
-            "vent_flag": int(vent_flag_pred[idx]),
-            "remaining_minutes": int(remaining_pred[idx])
+    for i, (_, row) in enumerate(df_scaled.iterrows()):  # enumerate로 i=0부터 시작
+        results[i] = {
+            "vent_flag": int(vent_flag_pred[i]),
+            "remaining_minutes": int(remaining_pred[i])
         }
 
     return results

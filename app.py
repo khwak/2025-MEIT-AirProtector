@@ -16,7 +16,7 @@ from utils.ventilation_controller import get_current_status
 
 app = Flask(__name__) #Flask 앱 객체를 생성.
 
-# 창문/환기팬 상태 
+# 창문/환기팬 상태 (자동)
 @app.route("/api/ventilation/controll", methods=["GET"])
 def ventilation_controll():
     """
@@ -28,6 +28,9 @@ def ventilation_controll():
     status = get_current_status() 
 
     return jsonify(status)
+
+# 창문/환기팬 상태 (수동)
+# mqtt로 센서한테 window 또는 fan_speed 전달
 
 
 # 환기 시간 예측
@@ -71,6 +74,7 @@ def anomaly_results():
     anomalies = detect_anomaly(processed)
 
     return jsonify(anomalies)
+
 
 # UI 페이지
 @app.route("/")
