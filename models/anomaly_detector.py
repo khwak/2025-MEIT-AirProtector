@@ -14,7 +14,7 @@ sensor_cols = [
 
 BASE_DIR = os.path.dirname(__file__)  
 scaler = joblib.load(os.path.join(BASE_DIR, "anomaly_scaler.pkl"))
-model = load_model(os.path.join(BASE_DIR, "anomaly_lstm_ae.h5"))
+model = load_model(os.path.join(BASE_DIR, "anomaly_lstm_ae.h5"), compile=False)
 
 THRESHOLD = 0.275
 

@@ -1,6 +1,6 @@
 import time
-from mqtt_publish import MqttPublisher
-from mqtt_subscriber import fetch_data  # 데이터 조회 함수 임포트
+from .mqtt_publish import MqttPublisher
+from .mqtt_subscriber import fetch_data  # 데이터 조회 함수 임포트
 from models.threshold import ThresholdChecker
 
 # ---- 설정 ----
