@@ -2,7 +2,7 @@ import json
 import paho.mqtt.client as mqtt
 
 class MqttPublisher:
-    def __init__(self, broker="localhost", port=1883, topic="actuators/control"):
+    def __init__(self, broker="172.20.96.32", port=1883, topic="actuators/control"):
         self.broker = broker
         self.port = port
         self.topic = topic
