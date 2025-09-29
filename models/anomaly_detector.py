@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import joblib
+import os
 from tensorflow.keras.models import load_model
 
 # 1. 모델 & 스케일러 로드
@@ -11,8 +12,9 @@ sensor_cols = [
     'wind_speed', 'window_open', 'fan_speed', 'CO2', 'CO', 'HCHO', 'TVOC'
 ]
 
-scaler = joblib.load("anomaly_scaler.pkl")
-model = load_model("anomaly_lstm_ae.h5")
+BASE_DIR = os.path.dirname(__file__)  
+scaler = joblib.load(os.path.join(BASE_DIR, "anomaly_scaler.pkl"))
+model = load_model(os.path.join(BASE_DIR, "anomaly_lstm_ae.h5"))
 
 THRESHOLD = 0.275
 

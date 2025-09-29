@@ -1,14 +1,16 @@
 # ventilation_predict.py
 import numpy as np
 import pandas as pd
+import os
 import joblib
 from utils.mqtt_subscriber import fetch_data  # 센서 데이터 가져오기
 
 
 # 1. 모델 로드
-scaler = joblib.load(f"ventilation_scaler.pkl")
-clf = joblib.load(f"ventilation_classifier_lgbm.pkl")
-reg = joblib.load(f"ventilation_regressor_lgbm.pkl")
+BASE_DIR = os.path.dirname(__file__)  
+scaler = joblib.load(os.path.join(BASE_DIR, "ventilation_scaler.pkl"))
+clf = joblib.load(os.path.join(BASE_DIR, "ventilation_classifier_lgbm.pkl"))
+reg = joblib.load(os.path.join(BASE_DIR, "ventilation_regressor_lgbm.pkl"))
 
 
 # 2. Features 정의
