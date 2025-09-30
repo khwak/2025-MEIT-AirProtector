@@ -3,9 +3,18 @@ import json
 import pandas as pd
 from .cycle_timer import add_cycle_elapsed_time
 
+<<<<<<< Updated upstream
 MQTT_BROKER = "localhost"  # HW에서 publish하는 MQTT 브로커 주소
 MQTT_PORT = 1883
 MQTT_TOPIC = "environment/data"  # HW에서 publish하는 topic
+=======
+# ---- InfluxDB 설정 ----
+INFLUX_URL = "http://localhost:8086"
+# INFLUX_TOKEN = "eoHq8OwyRkcNPgQXCi4N2zKZEXhRLfebFENNe9XmOn4NQ1N6SU8J54IcRCShpwURxUWhJ0JgR832s_MAsM4n-Q=="
+INFLUX_TOKEN = "1mjcn8eY-FHd6MIQB2CnxiItKPL2IOzirhwxwxZRTiC8ZlaRglHJ-okXUav072S6j6IfGZ3YIE1BvSeapYnkvg=="
+INFLUX_ORG = "meit"
+INFLUX_BUCKET = "meit"
+>>>>>>> Stashed changes
 
 # 수신된 데이터를 임시 저장할 DataFrame
 columns = [

@@ -38,7 +38,12 @@ def get_current_status():
     """
     현재 창문/팬 상태를 반환
     Flask에서 /api/ventilation/controll 호출 시 사용
+    여기서는 예시로 고정값을 반환.
     """
+    _current_status = {
+        "window": 1,      # 예시
+        "fan_speed": 2     # 예시
+    }
     return _current_status
 
 def main():
