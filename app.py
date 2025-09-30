@@ -1,6 +1,6 @@
 #Flask 앱 기본 설정.
 from flask import Flask, request, jsonify, render_template
-from utils.mqtt_subscriber import fetch_data
+from utils.fetch_data import fetch_data
 from models.preprocessing import preprocess_sensor_data
 from models.ventilation_predictor import predict_remaining_minutes
 from models.anomaly_detector import detect_anomaly

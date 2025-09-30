@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import os
 import joblib
-from utils.mqtt_subscriber import fetch_data  # 센서 데이터 가져오기
+from utils.fetch_data import fetch_data  # 센서 데이터 가져오기
 
 
 # 1. 모델 로드
@@ -22,7 +22,7 @@ features = [
 
 def predict_remaining_minutes(raw_data: pd.DataFrame):
     """
-    raw_data: pandas DataFrame, mqtt_subscriber에서 가져온 데이터
+    raw_data: pandas DataFrame, fetch_data에서 가져온 데이터
     return: dict, device별 예측 결과
     """
     if raw_data.empty:

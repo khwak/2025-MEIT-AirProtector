@@ -1,6 +1,6 @@
 import time
 from .mqtt_publish import MqttPublisher
-from .mqtt_subscriber import fetch_data  # 데이터 조회 함수 임포트
+from .fetch_data import fetch_data  # 데이터 조회 함수 임포트
 from models.threshold import ThresholdChecker
 
 # ---- 설정 ----
@@ -23,7 +23,7 @@ def fetch_latest_data(required_fields):
     InfluxDB에서 최근 30분 데이터를 가져와서
     ThresholdChecker에 필요한 필드만 추출 (최근 값 기준)
     """
-    df = fetch_data()  # mqtt_subscriber.py의 fetch_data() 호출
+    df = fetch_data()  # fetch_data.py의 fetch_data() 호출
     if df.empty:
         return None
 

@@ -1,62 +1,53 @@
-from influxdb_client import InfluxDBClient
+import paho.mqtt.client as mqtt
+import json
 import pandas as pd
 from .cycle_timer import add_cycle_elapsed_time
 
-# ---- InfluxDB 설정 ----
-INFLUX_URL = "http://localhost:8086"
-INFLUX_TOKEN = "eoHq8OwyRkcNPgQXCi4N2zKZEXhRLfebFENNe9XmOn4NQ1N6SU8J54IcRCShpwURxUWhJ0JgR832s_MAsM4n-Q=="
-INFLUX_ORG = "meit"
-INFLUX_BUCKET = "meit"
+MQTT_BROKER = "localhost"  # HW에서 publish하는 MQTT 브로커 주소
+MQTT_PORT = 1883
+MQTT_TOPIC = "environment/data"  # HW에서 publish하는 topic
 
-client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
-query_api = client.query_api()
-
-# 필요한 필드들 
-fields = [
-    "indoor_temp", "outdoor_temp",
+# 수신된 데이터를 임시 저장할 DataFrame
+columns = [
+    "timestamp", "indoor_temp", "outdoor_temp",
     "indoor_hum", "outdoor_hum",
     "wind_speed", "window_open", "fan_speed",
-    "CO2", "CO", "HCHO", "TVOC",
+    "CO2", "CO", "HCHO", "TVOC"
 ]
+df = pd.DataFrame(columns=columns)
 
-def fetch_data():
-    # Flux 쿼리 만들기 
-    field_filter = " or ".join([f'r["_field"] == "{f}"' for f in fields])
-    query = f'''
-    from(bucket: "{INFLUX_BUCKET}")
-    |> range(start: 2025-09-29T09:30:00Z)  // 최근 30분(-30m)으로 나중에 바꾸기
-    |> filter(fn: (r) => r["_measurement"] == "environment")
-    |> filter(fn: (r) => {field_filter})
-    |> pivot(rowKey:["_time"], columnKey:["_field"], valueColumn:"_value")
-    |> keep(columns: ["_time", {",".join([f'"{f}"' for f in fields])}])
-    '''
+def on_connect(client, userdata, flags, rc):
+    print(f"Connected with result code {rc}")
+    client.subscribe(MQTT_TOPIC)
 
-    # 쿼리 실행 
-    df = query_api.query_data_frame(query)
-    if isinstance(df, list):  # 여러 table 반환된 경우
-        df = pd.concat(df)
-
-    if not df.empty:
-        # _time → timestamp rename
-        df = df.rename(columns={"_time": "timestamp"})
-
-        # 메타 정보 제거 (_time은 이미 timestamp로 rename 했으므로 안전)
-        drop_cols = [c for c in df.columns if c.startswith("_") or c in ["result", "table"]]
-        df = df.drop(columns=drop_cols, errors="ignore")
-
-        # 정렬
-        df = df.sort_values("timestamp").reset_index(drop=True)
+def on_message(client, userdata, msg):
+    global df
+    try:
+        payload = json.loads(msg.payload.decode())
+        # timestamp가 없으면 현재 시각 추가
+        if "timestamp" not in payload:
+            payload["timestamp"] = pd.Timestamp.now()
+        row = {col: payload.get(col, None) for col in columns}
+        df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
 
         # 숫자형 변환
-        for f in fields:
+        for f in columns[1:]:
             df[f] = pd.to_numeric(df[f], errors="coerce")
-    
-    # cycle_elapsed_time 추가
-    df = add_cycle_elapsed_time(df)
+        
+        # cycle_elapsed_time 계산
+        df = add_cycle_elapsed_time(df)
+        print(f"Received data: {row}")
+    except Exception as e:
+        print(f"Error processing message: {e}")
 
-    return df
+def start_subscriber():
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+
+    client.connect(MQTT_BROKER, MQTT_PORT, 60)
+    client.loop_forever()  # blocking loop
 
 # 테스트
 if __name__ == "__main__":
-    df = fetch_data()
-    print(df.head())
+    start_subscriber()

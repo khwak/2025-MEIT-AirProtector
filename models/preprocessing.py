@@ -1,6 +1,6 @@
 # preprocessing.py
 import pandas as pd
-from utils.mqtt_subscriber import fetch_data
+from utils.fetch_data import fetch_data
 
 def preprocess_sensor_data(df: pd.DataFrame) -> pd.DataFrame:
     """
