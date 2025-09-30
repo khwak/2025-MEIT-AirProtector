@@ -1,22 +1,32 @@
-#Flask 앱 기본 설정.
+'''
+flask 웹 서버 코드. 
+프로젝트의 서버 쪽에서 센서 데이터랑 환기 제어 기능을 
+웹 API 형태로 제공하는 구조임.
+'''
+
+#Flask 앱 기본 설정. import를 한다. 
 from flask import Flask, request, jsonify, render_template
 from utils.fetch_data import fetch_data
 from models.preprocessing import preprocess_sensor_data
-from models.ventilation_predictor import predict_remaining_minutes
-from models.anomaly_detector import detect_anomaly
+from models.ventilation_predictor import predict_remaining_minutes 
+# 환기 완료까지 남은 시간을 예측하는 함수
 from utils.ventilation_controller import get_current_status
+#현재 창문,환기팬 상태를 읽어오는 함수. 
+'''
+'''
 
-#Flask : Python 웹 프레임워크. 웹 API를 쉽게 만들 수 있음.
-#request : 클라이언트에서 들어오는 요청 파라미터를 읽는 기능.
-#jsonify : Python dict → JSON 응답으로 변환.
-#render_template : html파일을 불러오는 함수.
-#InfluxDBClient : 시계열 데이터베이스인 InfluxDB에 연결하기 위한 라이브러리.
-#preprocess_sensor_data : 데이터 전처리 함수 (스케일링, 보정 등).
-#ThresholdChecker : 센서 데이터의 정상/경고/심각 여부를 판단하는 클래스.
+app = Flask(__name__) 
+#Flask 웹 서버의 인스턴스를 하나 만들었다. 그 서버 이름은 app
+#__name__: 지금 파일의 모듈이름을 넘겨주는 것 -> 디버그메세지에 모듈 기준 경로를 잘 보여준다. 
 
-app = Flask(__name__) #Flask 앱 객체를 생성.
-
-# 창문/환기팬 상태 (자동)
+# 창문/환기팬 상태 조회 (자동)
+'''
+decorator. 
+:함수를 감싸서 동작을 바꾸거나 등록하는 파이썬 문법
+(아래에 오는 함수 하나를 특정url과 매핑해준다.)
+ex)'http://127.0.0.1:5000/api/ventilation/controll'로 들어오면
+    flask가 ventilatio_controll함수를 실행하고 json응답을 돌려준다. 
+'''
 @app.route("/api/ventilation/controll", methods=["GET"])
 def ventilation_controll():
     """
@@ -28,6 +38,8 @@ def ventilation_controll():
     status = get_current_status() 
 
     return jsonify(status)
+if __name__ == "__main__":
+    app.run("0.0.0.0", port=5000, debug=True)
 
 # 창문/환기팬 상태 (수동)
 # mqtt로 센서한테 window 또는 fan_speed 전달
