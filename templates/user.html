@@ -45,7 +45,15 @@
             }
 
             .left {
-                flex: 55; /* 비율로 설정 */
+                flex: 55; 
+                display: flex; 
+                flex-direction: column; 
+            }
+
+            .left iframe {
+                flex: 1; 
+                width: 100%;
+                border: none;
             }
 
             .right {
@@ -156,9 +164,10 @@
                 <!-- 왼쪽 큰 박스 -->
                 <div class="left">
                     <h3>공기 분석</h3>
-                    <iframe
-                        src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
-                    ></iframe>
+                    <iframe src="http://127.0.0.1:3000/d-solo/7b298924-b896-4dd7-afb0-c7f300709b2d/gas?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&panelId=1&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
+                    <iframe src="http://127.0.0.1:3000/d-solo/7b298924-b896-4dd7-afb0-c7f300709b2d/gas?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&panelId=2&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
+                    <iframe src="http://127.0.0.1:3000/d-solo/7b298924-b896-4dd7-afb0-c7f300709b2d/gas?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&panelId=3&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
+                    <iframe src="http://127.0.0.1:3000/d-solo/7b298924-b896-4dd7-afb0-c7f300709b2d/gas?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&panelId=4&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
                 </div>
 
                 <!-- 오른쪽 영역 -->

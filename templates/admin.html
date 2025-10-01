@@ -46,7 +46,15 @@
             }
 
             .left {
-                flex: 50; /* 비율로 설정 */
+                flex: 50; 
+                display: flex; 
+                flex-direction: column; 
+            }
+
+            .left iframe {
+                flex: 1; 
+                width: 100%;
+                border: none;
             }
 
             .right {
@@ -69,64 +77,126 @@
             }
 
             .now_status_manipulate {
-                display: inline;
+                display: flex; 
+                flex-direction: row; 
+                flex: 1; 
+                gap: 10px; 
+            }
+            .now_status, .manipulate {
+                flex: 1; 
+                color: white;
+            }
+            .now_status h3, .manipulate h3 {
+                position: static; 
+                padding-left: 10px; 
+                margin-bottom: 5px; 
+                padding-top: 5px;
             }
             .now_status {
-                width: 50%;
-            }
-            .manipulate {
-                color: white;
-                border: 1px solid white;
-                width: 50%;
-                display: inline;
-                text-align: center;
-                justify-content: center; /* 가로 가운데 정렬 */
-                align-items: center; /* 가로 가운데 정렬 */
+                width: 50%; 
+                display: flex;             
+                flex-direction: column;    
+                flex: 1;                   
             }
             .manipulate ul {
-                list-style: none; /* 리스트 불릿 제거 */
-                padding: 10px;
-
-                /* border: 1px solid white; */
-
-                align-content: center;
-                height: 80%;
+                list-style: none; /* 불릿 제거 */
+                padding: 0;
+                margin: 0;
             }
-
             .manipulate li {
-                /* border: 1px solid white; */
                 display: flex;
-                /* justify-content: center;  */
-                text-align: left;
+                justify-content: space-between; 
                 align-items: center;
-                justify-content: space-between;
+                height: 50px;
+                margin: 10px 0; 
+                padding: 0 10px; 
+                color: white;
+            }
 
-                height: 50px; /* 높이 지정 (원하면 조정 가능) */
-                margin: 10px;
-                text-align: left;
-            }
             .manipulate li div {
-                /* border: 1px solid red; */
-                text-align: left;
-                margin-left: 25%;
+                text-align: right;
+                margin-left: 0;
                 font-size: 20px;
+                width: 100px; 
+                flex-shrink: 0; 
             }
+
+            .manipulate li div:first-child {
+                width: auto;          
+                flex: 1;              
+                text-align: left;   
+                font-size: 18px; 
+            }    
+
+            .manipulate .button-group {
+                display: flex;
+                gap: 2px;
+                justify-content: flex-end;  /* 버튼들을 오른쪽 끝에 정렬 */
+                width: 180px;               /* 버튼 그룹 전체 폭 고정 */
+                flex-shrink: 0;   
+            }
+
             .manipulate li button {
-                /* border: 1px solid red; */
-                margin-right: 25%;
+                margin: 0;
+                padding: 8px 12px;
+                background-color: #333;
+                color: white;
+                border: 1px solid #555;
+                cursor: pointer;
+                font-size: 14px;
+                transition: background-color 0.2s, border-color 0.2s;
+            }
+
+            .manipulate li button.active {
+                background-color: #007bff; 
+                border-color: #007bff;
+                font-weight: bold;
             }
             .in_out_information {
                 width: 50%;
+                display: flex; 
+                flex-direction: column; 
+                height: 100%; 
             }
+
+            .in_out_information iframe {
+                flex: 1; 
+                width: 100%;
+                height: 100%; 
+                border: none;
+            }
+
             .textzone {
                 width: 50%;
+                display: flex; 
+                flex-direction: column; 
+                position: relative;
+                background: #222; 
+                padding: 10px;
+                box-sizing: border-box;
             }
             h3 {
                 padding: 0;
                 margin: 0;
-                position: absolute;
-                padding-left: 0;
-                padding-top: 0;
+                position: static; 
+                color: white;
+                flex-shrink: 0; /* 크기 축소 방지 */
+                font-size: 1.5em; 
+                margin-bottom: 5px; 
+                padding-bottom: 5px; 
+                margin-left: 10px;
+            }
+
+            #ventContent {
+                flex: 1; 
+                width: 100%;
+                padding: 5px 10px; 
+                color: white;
+                overflow-y: auto; 
+                line-height: 1.6;
+                margin-bottom: 10px; 
+                box-sizing: border-box;
+                text-align: left;
             }
             .그대로가져오기 {
                 justify-content: left;
@@ -156,6 +226,28 @@
                 border: 1px solid white;
                 height: 50%;
             }
+
+            #alertLog {
+                flex-grow: 1;
+                height: 100px;         
+                overflow-y: auto;       
+                background: #222;
+                padding: 10px;
+                font-size: 14px;
+                color: white;
+                box-sizing: border-box; 
+            }
+
+            #toggleBtn {
+                align-self: flex-end; 
+                padding: 8px 16px;
+                background: #333;
+                color: white;
+                border: 1px solid #555;
+                cursor: pointer;
+                font-size: 14px;
+                border-radius: 6px;
+            }
         </style>
     </head>
     <body>
@@ -176,60 +268,52 @@
                     <div class="main">
                         <!-- 왼쪽 큰 박스 -->
                         <div class="left">
-                            <h3>공기 분석</h3>
-                            <iframe
-                                src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
-                            ></iframe>
+                            <iframe src="http://127.0.0.1:3000/d-solo/7b298924-b896-4dd7-afb0-c7f300709b2d/gas?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&panelId=1&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
+                            <iframe src="http://127.0.0.1:3000/d-solo/7b298924-b896-4dd7-afb0-c7f300709b2d/gas?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&panelId=2&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
+                            <iframe src="http://127.0.0.1:3000/d-solo/7b298924-b896-4dd7-afb0-c7f300709b2d/gas?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&panelId=3&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
+                            <iframe src="http://127.0.0.1:3000/d-solo/7b298924-b896-4dd7-afb0-c7f300709b2d/gas?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&panelId=4&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
                         </div>
 
                         <!-- 오른쪽 영역 -->
                         <div class="right">
                             <div>
-                                <h3>경고 알림 확인 + 자동제어 기록</h3>
-                                <iframe
-                                    src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
-                                ></iframe>
+                                <div id="alertLog"></div>
                             </div>
 
                             <div class="now_status_manipulate">
-                                <h3>현재상태</h3>
                                 <div class="now_status">
-                                    <iframe
-                                        src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
-                                    ></iframe>
+                                    <iframe src="http://127.0.0.1:3000/d-solo/f795c4d1-7d27-4a94-ae65-66c1592d49e7/in-outdoor?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&showCategory=Panel%20options&refresh=5s&panelId=3&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
                                 </div>
                                 <div class="manipulate">
                                     <h3>수동제어</h3>
-                                    <ul>
-                                        <li>
-                                            <div class="window">ㅤ창문</div>
-                                            <button>on/off</button>
+                                    <ul id="control-list"> <li data-control="window">
+                                            <div class="window">창문</div>
+                                            <div class="button-group">
+                                                <button data-level="0">0%</button>
+                                                <button data-level="1">50%</button>
+                                                <button data-level="2">100%</button>
+                                            </div>
                                         </li>
-                                        <li>
+                                        <li data-control="fan">
                                             <div>환기 팬</div>
-                                            <button>on/off</button>
+                                            <div class="button-group">
+                                                <button data-level="0">0%</button>
+                                                <button data-level="1">50%</button>
+                                                <button data-level="2">100%</button>
+                                            </div>
                                         </li>
                                     </ul>
                                 </div>
                             </div>
                             <div>
                                 <div class="in_out_information">
-                                    <h3>실내외 온도/습도/바람세기</h3>
-                                    <iframe
-                                        src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
-                                    ></iframe>
+                                    <iframe src="http://127.0.0.1:3000/d-solo/f795c4d1-7d27-4a94-ae65-66c1592d49e7/in-outdoor?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&showCategory=Panel%20options&refresh=5s&panelId=1&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
+                                    <iframe src="http://127.0.0.1:3000/d-solo/f795c4d1-7d27-4a94-ae65-66c1592d49e7/in-outdoor?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&showCategory=Panel%20options&refresh=5s&panelId=2&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
                                 </div>
                                 <div class="textzone">
                                     <h3 id="ventTitle"></h3>
-                                    <iframe id="ventIframe"></iframe>
-                                    <button
-                                        id="toggleBtn"
-                                        style="
-                                            position: absolute;
-                                            bottom: 20px;
-                                            right: 20vw;
-                                        "
-                                    >
+                                    <div id="ventContent"></div>
+                                    <button id="toggleBtn"> 
                                         전환하기
                                     </button>
                                 </div>
@@ -240,45 +324,305 @@
                 <div class="UIadd">
                     <div>
                         <h3>센서상태확인</h3>
-                        <iframe
-                            src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
-                        ></iframe>
+                        <div id="sensorStatusDisplay" class="sensor-status-box" style="background-color: #333; color: white;">
+                            상태 로딩 중...
+                        </div>                        
                     </div>
                     <div>
                         <h3>데이터 드리프트 알림</h3>
-                        <iframe
-                            src="http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s"
-                        ></iframe>
+
                     </div>
                 </div>
             </div>
         </div>
     </body>
     <script>
-        // 환기 여부 (true면 환기 중, false면 환기 안 함)
-        let isVentilating = true; //초기상태 👉 실제 값은 센서/백엔드에서 받아오면 됨
+        // 환기 여부 (true면 환기 중, false면 환기 안 함)        
+        // 가스 설명 문구 (환기 불필요 시)
+        const GAS_MESSAGES = [
+            "CO: 무색·무취, 고농도 시 중독 위험.",
+            "CO₂: 농도 높으면 졸림·집중력 저하, 과다 시 질식 위험.",
+            "HCHO: 눈·코·목 자극, 장기 노출 시 건강 위험.",
+            "벤젠: 신경 영향, 장기 노출 시 건강 위험.T",
+            "VOC: 여러 유기화합물 합, 공기 질 악화 시 두통·어지럼증 유발."
+        ];
 
         const title = document.getElementById('ventTitle');
-        const iframe = document.getElementById('ventIframe');
+        const ventContent = document.getElementById('ventContent'); 
         const toggleBtn = document.getElementById('toggleBtn');
+        const controlList = document.getElementById('control-list');
 
-        if (isVentilating) {
-            // 환기할 때
-            title.textContent = '환기시간예측';
-            iframe.src =
-                'http://localhost:3000/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s';
-        } else {
-            // 환기 안 할 때
-            title.textContent = '가스 설명';
-            iframe.src =
-                'http://localhost:3001/d-solo/abcd1234/test-dashboard?orgId=1&refresh=5s';
+        let isVentPredictionMode = true;  // 상태 변수 정의: true면 환기 예측, false면 가스 설명
+        let messageIndex = 0; // 메시지 인덱스
+
+        const alertLogElement = document.getElementById('alertLog');
+        let lastAlertLevel = 0; // 초기 경고 레벨 (0: Normal, 1: Warning, 2: Critical 등)
+        let lastManualControl = { window: 0, fan: 0 }; // 마지막 수동 제어 상태 저장
+
+
+        /**
+         * @brief 현재 환기 상태를 가져와 버튼의 활성화 상태를 업데이트
+         */
+        async function initializeControlButtons() {
+            try {
+                const response = await fetch("http://127.0.0.1:5000/api/ventilation/status"); 
+                const status = await response.json();
+                
+                // 초기 상태 반영
+                updateButtonState('window', status.window || 0);
+                updateButtonState('fan', status.fan_speed || 0);
+
+            } catch (error) {
+                console.error("수동제어 초기 상태 로드 실패:", error);
+                // API 호출 실패 시 기본값 설정 (0%)
+                updateButtonState('window', 0);
+                updateButtonState('fan', 0);
+            }
         }
 
-        updateIframe();
 
+        /**
+         * @brief 현재 상태(level)를 기반으로 버튼의 활성화 상태를 업데이트
+         */
+        function updateButtonState(controlType, level) {
+            const controlItem = controlList.querySelector(`[data-control="${controlType}"]`);
+            if (!controlItem) return;
+
+            controlItem.querySelectorAll('button').forEach(btn => {
+                btn.classList.remove('active');
+                if (parseInt(btn.dataset.level) === level) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        /**
+         * @brief 환기 예측 API를 호출하여 결과를 업데이트
+         */
+        async function fetchDataAndUpdateVent() {
+            try {
+                const response = await fetch("http://127.0.0.1:5000/api/ventilation/predict");
+                const predictions = await response.json();
+                
+                // 예측 결과가 배열이라고 가정하고, 첫 번째 항목(index 0)을 사용합니다.
+                const prediction = predictions[0] || { vent_flag: 0, remaining_minutes: 0 };
+
+                // isVentPredictionMode 상태에 따라 화면 업데이트
+                updateVentDisplay(prediction);
+                
+            } catch (error) {
+                console.error("환기 예측 데이터 로드 실패:", error);
+                title.textContent = "환기 예측 오류";
+                ventContent.innerHTML = "<p style='color: red;'>환기 예측 데이터를 불러오는 데 실패했습니다.</p>";
+            }
+        }
+
+        /**
+         * @brief isVentPredictionMode 상태와 API 데이터를 기반으로 화면을 표시
+         */
+        function updateVentDisplay(prediction) {
+            
+            // API의 vent_flag를 기반으로 초기 상태를 설정 (최초 1회만 실행됨)
+            if (typeof isVentPredictionMode === 'undefined') {
+                isVentPredictionMode = (prediction.vent_flag === 1);
+            }
+
+            if (isVentPredictionMode) {
+                // [환기 예측] 모드
+                title.innerHTML = `예상 환기 시간`;
+                toggleBtn.textContent = '가스 설명으로 전환'; // 버튼 텍스트 변경
+
+                ventContent.innerHTML = `
+                    <p style="font-size: 1em; color: yellow; margin: 10px 0;">
+                        예상 소요 시간: ${prediction.remaining_minutes}분
+                    </p>
+                    <p style="margin-top: 15px; color: gray; font-size: 0.9em;">
+                        (환기 예측은 주기적인 데이터 분석을 통해 업데이트됩니다.)
+                    </p>
+                `.replace(/\*\*/g, '<strong>');
+            } else {
+                // [가스 설명] 모드
+                title.textContent = '가스 설명';
+                
+                // 메시지 순환 로직: 현재 인덱스 메시지를 표시
+                // .replace(".T", "")를 추가하여 불필요한 T 제거 및 메시지 분할
+                const cleanMessage = GAS_MESSAGES[messageIndex].replace(".T", ""); 
+                const gasName = cleanMessage.split(':')[0];
+                const gasDesc = cleanMessage.split(':')[1].trim();
+
+                title.innerHTML = `가스 설명`;
+
+                // ventContent에 가스 설명 메시지 표시
+                ventContent.innerHTML = `
+                    <p style="font-size: 1.5em; color: white; margin: 0 0 15px 0;">
+                        <strong>${gasName}</strong>
+                    </p>
+                    <p style="font-size: 1.1em; color: lightgray; margin: 0; line-height: 1.6;">
+                        ${gasDesc}
+                    </p>
+                `;
+                
+                messageIndex = (messageIndex + 1) % GAS_MESSAGES.length;
+                toggleBtn.textContent = '환기 예측으로 전환'; 
+            }
+        }
+
+        /**
+         * @brief 현재 시각과 메시지를 로그에 기록하고 스크롤을 맨 아래로 이동
+         * @param {string} message 기록할 메시지
+         */
+        function logEvent(message, isAlert = false) {
+            const now = new Date();
+            const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            let color = isAlert ? 'yellow' : 'lightgray';
+            if (message.includes('Critical')) color = 'red';
+            else if (message.includes('Warning')) color = 'orange';
+
+            const logEntry = document.createElement('p');
+            logEntry.style.margin = '5px 0';
+            logEntry.style.color = color;
+            logEntry.innerHTML = `[${timeString}] ${message}`;
+
+            alertLogElement.appendChild(logEntry);
+            // 스크롤을 맨 아래로 이동
+            alertLogElement.scrollTop = alertLogElement.scrollHeight;
+        }
+
+        /**
+         * @brief Grafana/Alert API를 통해 현재 경고 레벨을 확인하고 로그에 기록
+         */
+        async function checkAndDisplayAnomaly() {
+            let hasAnomaly = false;
+            let statusText = "API 연결 오류";
+            let statusColor = '#ffc107'; 
+            let isFirstCheck = sensorStatusDisplay.textContent.includes('로딩 중');
+
+            try {
+                const response = await fetch("http://127.0.0.1:5000/api/anomaly/results");
+                const results = await response.json(); 
+                
+                for (const timestamp in results) {
+                    if (results[timestamp].anomaly === true) {
+                        hasAnomaly = true;
+                        break;
+                    }
+                }
+
+                if (hasAnomaly) {
+                    statusText = "센서 이상/고장 감지";
+                    statusColor = '#dc3545'; // Red
+                    if (!isFirstCheck && sensorStatusDisplay.style.backgroundColor !== statusColor) {
+                        logEvent("센서 이상 감지 (Anomaly): 데이터 드리프트/이상 징후 발생.", true);
+                    }
+                } else {
+                    statusText = "센서 상태 정상";
+                    statusColor = '#28a745'; // Green
+                    if (!isFirstCheck && sensorStatusDisplay.style.backgroundColor === '#dc3545') {
+                        logEvent("센서 상태 정상 복구 (Anomaly 해제).", true);
+                    }
+                }
+
+            } catch (error) {
+                console.error("센서 이상 감지 API 호출 실패:", error);
+                if (isFirstCheck) {
+                    logEvent("센서 이상 감지 모듈 연결 실패.", true);
+                }
+            }
+
+            // UI 업데이트
+            sensorStatusDisplay.innerHTML = statusText;
+            sensorStatusDisplay.style.backgroundColor = statusColor;
+            sensorStatusDisplay.style.color = hasAnomaly ? 'white' : '#111';
+            sensorStatusDisplay.style.padding = '15px'; 
+            sensorStatusDisplay.style.textAlign = 'center';
+            sensorStatusDisplay.style.fontSize = '1.2em';
+        }
+
+
+        /**
+         * @brief Grafana/Alert API를 통해 현재 경고 레벨을 확인하고 로그에 기록
+         */
+        async function checkAndLogAlertStatus() {
+            try {
+                const response = await fetch("http://127.0.0.1:5000/api/alert/status");
+                const alertStatus = await response.json(); 
+                
+                const currentLevel = alertStatus.level_code || 0;
+                const message = alertStatus.message || "상태 정보 없음";
+                
+                if (currentLevel !== lastAlertLevel) {
+                    let logMessage = '';
+                    
+                    if (currentLevel > 0) {
+                        logMessage = `경고 발생! (Level ${currentLevel}): ${message}`;
+                    } else if (lastAlertLevel > 0 && currentLevel === 0) {
+                        logMessage = '경고 해제됨. 실내 환경 정상.';
+                    }
+
+                    if (logMessage) {
+                        logEvent(logMessage, true);
+                    }
+                    lastAlertLevel = currentLevel;
+                }
+
+            } catch (error) {
+                // console.error("경고 상태 확인 실패:", error);
+            }
+        }
+        
+        // 1. 초기 상태 설정 (수동 제어 버튼)
+        initializeControlButtons();
+
+        // 2. 환기 예측/설명 로직 실행
+        fetchDataAndUpdateVent(); 
+        
+        // 3. 5초마다 환기 예측/설명 업데이트 (Flask API 호출 빈도에 맞게 조정)
+        setInterval(fetchDataAndUpdateVent, 5000); 
+
+        // 4. "전환하기" 버튼 클릭 이벤트 추가
         toggleBtn.addEventListener('click', () => {
-            isVentilating = !isVentilating; // 상태 토글
-            updateIframe(); // 변경된 상태 반영
+            // 상태를 반전 (토글)
+            isVentPredictionMode = !isVentPredictionMode; 
+            
+            // 변경된 상태로 화면 즉시 업데이트
+            fetchDataAndUpdateVent();
         });
+
+        // 5. 수동 제어 클릭 이벤트 처리
+        controlList.addEventListener('click', async (event) => {
+            const clickedButton = event.target.closest('button');
+            if (!clickedButton) return;
+            
+            const controlItem = clickedButton.closest('li');
+            if (!controlItem) return;
+            
+            const controlType = controlItem.dataset.control; 
+            const newLevel = parseInt(clickedButton.dataset.level); 
+
+            // 1) Flask API 호출 (POST 요청)
+            try {
+                const response = await fetch("http://127.0.0.1:5000/api/ventilation/manual", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ control_type: controlType, level: newLevel })
+                });
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    updateButtonState(controlType, newLevel);
+                    let controlName = (controlType === 'window') ? '창문' : '환기 팬';
+                    let controlValue = (newLevel === 0) ? '닫힘(0%)' : (newLevel === 1) ? '중간(50%)' : '열림(100%)';
+                    logEvent(`수동 제어 기록: ${controlName}을 ${controlValue}으로 설정.`);
+                } else {
+                    console.error("제어 실패:", result.error || "알 수 없는 오류");
+                    logEvent(`수동 제어 실패: ${controlType} 설정 중 오류 발생.`, true);
+                }
+            } catch (error) {
+                console.error("수동 제어 통신 오류:", error);
+                logEvent(`서버 통신 오류: 수동 제어 API 연결 실패.`, true);
+            }
+        });
+
     </script>
 </html>

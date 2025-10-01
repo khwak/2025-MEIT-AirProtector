@@ -52,19 +52,6 @@ class ThresholdChecker:
                     "serious": "공기청정기 100% 가동 권고, 냉난방기 표준 모드, 즉시 환기 및 원인 차단 권고"
                 }
             },
-            "Benzene": {
-                "normal": lambda x: x <= 30,
-                "warning": lambda x: 30 < x <= 100,
-                "serious": lambda x: x > 100,
-                "action": {
-                    "warning": "-경고 : 창문 50%, 환기팬 50%",
-                    "serious": "-심각 : 창문 100%, 환기팬 100%"
-                },
-                "alert": {
-                    "warning": "공기청정기 50% 가동 권고 (활성탄 필터 강화), 냉난방기 절약 모드 환기 보조",
-                    "serious": "공기청정기 100% 가동 권고, 냉난방기 표준 모드, 즉시 환기 및 대피 고려"
-                }
-            },
             "TVOC": {
                 "normal": lambda x: x <= 400,
                 "warning": lambda x: 400 < x <= 1000,
