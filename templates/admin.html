@@ -224,7 +224,19 @@
             }
             .UIadd > div {
                 border: 1px solid white;
-                height: 50%;
+                flex: 1;             /* 세로 공간 균등 차지 */
+                display: flex;       /* 자식 iframe이 flex 안에서 채울 수 있도록 */
+                flex-direction: column;
+            }
+
+            .UIadd iframe,
+            .left iframe,
+            .in_out_information iframe,
+            .now_status iframe {
+                flex: 1;             /* 남는 공간 전부 차지 */
+                width: 100%;
+                height: 100%;
+                border: none;
             }
 
             #alertLog {
@@ -247,6 +259,35 @@
                 cursor: pointer;
                 font-size: 14px;
                 border-radius: 6px;
+            }
+
+            #anomalyList {
+                max-height: 150px;     /* 길어지면 스크롤 */
+                overflow-y: auto;
+                margin-top: 10px;
+                padding: 8px;
+                background: #111;
+                border: 1px solid #444;
+                color: #fff;
+                font-size: 0.9em;
+                border-radius: 6px;
+            }
+            #sensorStatusDisplay {
+                flex: 1;                 /* 남는 공간 차지 */
+                display: flex;
+                flex-direction: column;
+                background: #222;
+                border: 1px solid #444;
+                color: white;
+                padding: 5px;
+                box-sizing: border-box;
+            }
+
+            #sensorStatusDisplay iframe {
+                flex: 1;                 /* 부모 크기 채우기 */
+                width: 100%;
+                height: 100%;            /* 높이 자동 맞춤 */
+                border: none;
             }
         </style>
     </head>
@@ -324,13 +365,14 @@
                 <div class="UIadd">
                     <div>
                         <h3>센서상태확인</h3>
-                        <div id="sensorStatusDisplay" class="sensor-status-box" style="background-color: #333; color: white;">
-                            상태 로딩 중...
+                        <div id="sensorStatusDisplay" class="sensor-status-box">
+                            <iframe src="http://127.0.0.1:3000/d-solo/445b808e-6bed-4a4d-9a63-a4580bd73da2/sensor-state?orgId=1&from=1759245600000&to=1759247700000&timezone=browser&tab=transformations&showCategory=Panel%20options&panelId=1&__feature.dashboardSceneSolo=true" width="450" height="200" frameborder="0"></iframe>
                         </div>                        
                     </div>
                     <div>
-                        <h3>데이터 드리프트 알림</h3>
-
+                        <h3>센서 고장 로그</h3>
+                        <div id="sensorStatusDisplay"></div>
+                        <div id="anomalyList"></div>
                     </div>
                 </div>
             </div>
@@ -497,27 +539,41 @@
             let statusText = "API 연결 오류";
             let statusColor = '#ffc107'; 
             let isFirstCheck = sensorStatusDisplay.textContent.includes('로딩 중');
+            const anomalyListDiv = document.getElementById("anomalyList");
 
             try {
                 const response = await fetch("http://127.0.0.1:5000/api/anomaly/results");
                 const results = await response.json(); 
                 
+                // anomaly가 true인 시간만 추출
+                const anomalyTimes = [];
                 for (const timestamp in results) {
                     if (results[timestamp].anomaly === true) {
                         hasAnomaly = true;
-                        break;
+                        anomalyTimes.push(timestamp);
                     }
                 }
 
                 if (hasAnomaly) {
-                    statusText = "센서 이상/고장 감지";
+                    statusText = `센서 이상/고장 감지됨\n(${anomalyTimes.join(', ')})`;
                     statusColor = '#dc3545'; // Red
-                    if (!isFirstCheck && sensorStatusDisplay.style.backgroundColor !== statusColor) {
-                        logEvent("센서 이상 감지 (Anomaly): 데이터 드리프트/이상 징후 발생.", true);
+
+                    // anomaly 시간 목록 출력
+                    anomalyListDiv.innerHTML = anomalyTimes
+                        .map(t => `<div>⚠ ${t}</div>`)
+                        .join("");
+
+                    // 로그에도 기록
+                    if (!isFirstCheck) {
+                        anomalyTimes.forEach(t => {
+                            logEvent(`[Anomaly] ${t} - 센서 고장이 우려되니 확인이 필요합니다.`, true);
+                        });
                     }
                 } else {
                     statusText = "센서 상태 정상";
                     statusColor = '#28a745'; // Green
+                    anomalyListDiv.innerHTML = "";
+
                     if (!isFirstCheck && sensorStatusDisplay.style.backgroundColor === '#dc3545') {
                         logEvent("센서 상태 정상 복구 (Anomaly 해제).", true);
                     }
@@ -531,7 +587,7 @@
             }
 
             // UI 업데이트
-            sensorStatusDisplay.innerHTML = statusText;
+            sensorStatusDisplay.textContent = statusText;
             sensorStatusDisplay.style.backgroundColor = statusColor;
             sensorStatusDisplay.style.color = hasAnomaly ? 'white' : '#111';
             sensorStatusDisplay.style.padding = '15px'; 
