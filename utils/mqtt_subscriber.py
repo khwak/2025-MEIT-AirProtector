@@ -3,9 +3,11 @@ import json
 import pandas as pd
 from influxdb_client import InfluxDBClient, Point, WritePrecision
 from .cycle_timer import add_cycle_elapsed_time
+import pytz
+import sys
 
 # ---- MQTT 설정 ----
-MQTT_BROKER = "192.168.137.1"
+MQTT_BROKER = "localhost"
 MQTT_PORT = 1883
 MQTT_TOPIC = "actuators/control"
 
@@ -15,8 +17,6 @@ INFLUX_TOKEN = "eoHq8OwyRkcNPgQXCi4N2zKZEXhRLfebFENNe9XmOn4NQ1N6SU8J54IcRCShpwUR
 INFLUX_ORG = "meit"
 INFLUX_BUCKET = "meit"
 
-client_db = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
-write_api = client_db.write_api()
 
 # DataFrame 컬럼
 columns = [
@@ -31,66 +31,73 @@ def on_connect(client_mqtt, userdata, flags, rc):
     print(f"Connected with result code {rc}")
     client_mqtt.subscribe(MQTT_TOPIC)
 
-def on_message(client_mqtt, userdata, msg):
+def on_message_with_db(client_mqtt, userdata, msg, write_api, bucket, org):
+    print(f"[MQTT] Message received: {msg.payload.decode()}")
     global df
     try:
         payload = json.loads(msg.payload.decode())
-        ts_value = payload.get("timestamp")
-
-        if isinstance(ts_value, (int, float)) and ts_value > 1_000_000_000: 
-            # 초 단위로 가정하고 변환
-            ts = pd.to_datetime(ts_value, unit='s')
-        else:
-            # 타임스탬프가 없거나 유효하지 않으면 현재 시각 (UTC 권장) 사용
-            ts = pd.Timestamp.now(tz='UTC')
-
+        ts = pd.Timestamp.now(tz=pytz.timezone("Asia/Seoul"))
         payload["timestamp"] = ts
 
-        # DataFrame에 추가
         row = {col: payload.get(col, None) for col in columns}
         df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
         df = add_cycle_elapsed_time(df)
 
-        # InfluxDB Point 생성
         point = Point("control").time(ts, WritePrecision.NS)
-        for f in columns[1:]:  # timestamp는 _time으로 들어가므로 제외
-            value = row[f]
-            if value is not None:
-                try:
-                    # InfluxDB는 정수/실수를 구분하므로, 정수형 필드는 int()로 변환 시도
-                    if isinstance(value, int) or (isinstance(value, float) and value.is_integer()):
-                        point.field(f, int(value))
-                    else:
-                        point.field(f, float(value))
-                except (ValueError, TypeError):
-                    # 숫자로 변환할 수 없는 경우 문자열로 기록하거나 건너뛰기
-                    # 여기서는 건너뛰도록 처리합니다.
-                    pass
 
-        # InfluxDB에 저장
-        write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
+        is_valid_point = False
+        for f in columns[1:]:
+            val = row[f]
+            if val is not None:
+                try: 
+                    # 문자열 데이터를 float으로 변환하여 필드에 추가
+                    point = point.field(f, float(val))
+                    is_valid_point = True
+                except: 
+                    print(f"Warning: Field {f} could not be converted to float.")
 
-        print(f"Saved to InfluxDB: {row}")
+        # InfluxDB에 쓰기
+        if write_api and is_valid_point:
+            write_api.write(bucket=bucket, org=org, record=point)
+            print(f"InfluxDB 쓰기 성공: {ts}")
+        elif not write_api:
+            print("Write API가 초기화되지 않았습니다. DB에 데이터를 쓸 수 없습니다.")
+        
     except Exception as e:
-        print(f"Error processing message: {e}")
+        print(f"Error processing message or writing to DB: {e}", file=sys.stderr)
 
-def start_subscriber():
-    client_mqtt = mqtt.Client()
+def start_subscriber(write_api=None, bucket=None, org=None):
+    """
+    MQTT 클라이언트 연결을 시작합니다. 
+    write_api가 None일 경우, 단독 실행 모드로 간주하고 InfluxDB를 초기화합니다.
+    """
+    if write_api is None:
+        print("단독 실행 모드: InfluxDB 클라이언트를 자체 초기화합니다.")
+        try:
+            client_db = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
+            # 단독 실행 시에는 Write API를 SYNCHRONOUS로 설정하여 데이터 손실을 방지합니다.
+            write_api = client_db.write_api()
+            bucket = INFLUX_BUCKET
+            org = INFLUX_ORG
+        except Exception as e:
+            print(f"단독 실행 모드 InfluxDB 클라이언트 초기화 오류: {e}")
+            return
+            
+    client_mqtt = mqtt.Client(client_id="", protocol=mqtt.MQTTv311, transport="tcp")
     client_mqtt.on_connect = on_connect
-    client_mqtt.on_message = on_message
+    
+    # write_api, bucket, org를 인수로 on_message_with_db에 전달
+    client_mqtt.on_message = lambda c, u, m: on_message_with_db(c, u, m, write_api, bucket, org)
+    
+    print(f"write_api initialized: {write_api is not None}")
 
     try:
         client_mqtt.connect(MQTT_BROKER, MQTT_PORT, 60)
-        print("MQTT connection established. Starting loop...")
         client_mqtt.loop_forever()
-    except KeyboardInterrupt:
-        print("Subscriber stopped by user.")
     except Exception as e:
-        print(f"An error occurred in the MQTT connection: {e}")
+        print(f"MQTT connection error: {e}")
     finally:
-        # 스크립트 종료 시 InfluxDB 클라이언트 연결 해제
-        print("Closing InfluxDB client.")
-        client_db.close()
+        print("MQTT subscriber stopped.")
 
 if __name__ == "__main__":
     start_subscriber()

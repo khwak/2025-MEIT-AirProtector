@@ -44,6 +44,12 @@ def fetch_data():
         drop_cols = [c for c in df.columns if c.startswith("_") or c in ["result", "table"]]
         df = df.drop(columns=drop_cols, errors="ignore")
 
+        # 누락 데이터 처리
+        missing_fields = [f for f in fields if f not in df.columns]
+        for f in missing_fields:
+            # 누락된 열을 0.0으로 채워 추가
+            df[f] = 0.0 
+
         # 정렬
         df = df.sort_values("timestamp").reset_index(drop=True)
 
