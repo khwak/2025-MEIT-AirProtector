@@ -24,8 +24,8 @@ def fetch_data():
     field_filter = " or ".join([f'r["_field"] == "{f}"' for f in fields])
     query = f'''
     from(bucket: "{INFLUX_BUCKET}")
-    |> range(start: 2025-09-29T09:30:00Z)  // 최근 30분(-30m)으로 나중에 바꾸기
-    |> filter(fn: (r) => r["_measurement"] == "environment")
+    |> range(start: -1h)  // 최근 1시간(-1h)
+    |> filter(fn: (r) => r["_measurement"] == "control")
     |> filter(fn: (r) => {field_filter})
     |> pivot(rowKey:["_time"], columnKey:["_field"], valueColumn:"_value")
     |> keep(columns: ["_time", {",".join([f'"{f}"' for f in fields])}])
