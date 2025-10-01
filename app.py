@@ -6,6 +6,7 @@ from models.ventilation_predictor import predict_remaining_minutes
 from models.anomaly_detector import detect_anomaly
 from utils.ventilation_controller import get_current_status
 from utils.mqtt_publish import MqttPublisher
+from utils.ventilation_controller import run_once  
 
 import threading
 from utils.mqtt_subscriber import start_subscriber
@@ -147,12 +148,15 @@ def anomaly_results():
 @app.route('/api/alert/status', methods=['GET'])
 def get_alert_status():
     """
-    Grafana Alert Rule에 사용된 Flux 쿼리를 실행하여 현재 경고 레벨을 반환합니다.
-    Alert Condition: WHEN Last OF QUERY IS ABOVE 1
+    1회 모니터링/제어 실행 후 InfluxDB에서 최신 alert_status를 조회해 반환
     """
+    # 1. 최신 상태 업데이트
+    run_once()  # 한 사이클만 실행
+
+    # 2. InfluxDB에서 최근 5분 데이터 중 최대 level_code 조회
     if not query_api:
         return jsonify({"level_code": 0, "message": "API 서버 오류: InfluxDB 연결 실패"}), 500
-    
+
     # Grafana Alert Rule 쿼리 (최근 5분 데이터의 Max level_code)
     flux_query = f'''
     from(bucket: "{INFLUX_BUCKET}")

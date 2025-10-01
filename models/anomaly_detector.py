@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(__file__)
 scaler = joblib.load(os.path.join(BASE_DIR, "anomaly_scaler.pkl"))
 model = load_model(os.path.join(BASE_DIR, "anomaly_lstm_ae.h5"), compile=False)
 
-THRESHOLD = 0.275
+THRESHOLD = 0.2178
 
 
 # 2. 시퀀스 생성 함수

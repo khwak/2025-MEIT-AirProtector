@@ -1,38 +1,63 @@
-import paho.mqtt.client as mqtt
-import json
-from datetime import datetime
-import time
-import random
+import pandas as pd
+from influxdb_client import InfluxDBClient, Point, WritePrecision
+import pytz
 
-broker = "localhost"
-port = 1883
-topic = "actuators/control"
+# ------------------------
+# 1. CSV 불러오기
+# ------------------------
+csv_path = "C:/Users/khk02/meit-server/real_data.csv"
+df = pd.read_csv(csv_path, parse_dates=["timestamp"])
 
-client = mqtt.Client()
-client.connect(broker, port, 60)
+# ------------------------
+# 2. InfluxDB 설정
+# ------------------------
+INFLUX_URL = "http://localhost:8086"
+INFLUX_TOKEN = "eoHq8OwyRkcNPgQXCi4N2zKZEXhRLfebFENNe9XmOn4NQ1N6SU8J54IcRCShpwURxUWhJ0JgR832s_MAsM4n-Q=="
+INFLUX_ORG = "meit"
+INFLUX_BUCKET = "meit"
 
-try:
-    while True:
-        # 1초마다 전송
-        payload = {
-            "timestamp": datetime.now().isoformat(),
-            "window_open": random.choice([0, 1, 2]),  # ESP처럼 랜덤 테스트
-            "fan_speed": random.choice([0, 1, 2]),    # 랜덤 테스트
-            "indoor_temp": round(random.uniform(20, 26), 1),
-            "outdoor_temp": round(random.uniform(15, 22), 1),
-            "indoor_hum": round(random.uniform(40, 60), 1),
-            "outdoor_hum": round(random.uniform(30, 55), 1),
-            "wind_speed": round(random.uniform(0, 5), 1),
-            "CO2": random.randint(400, 800),
-            "CO": random.randint(0, 10),
-            "HCHO": round(random.uniform(0, 0.1), 3),
-            "TVOC": round(random.uniform(0, 1), 2)
-        }
+client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
+write_api = client.write_api()
 
-        client.publish(topic, json.dumps(payload))
-        print(f"[MQTT] Message sent: {payload}")
-        time.sleep(1)
+# ------------------------
+# 3. CSV → InfluxDB
+# ------------------------
+columns = [
+    "indoor_temp", "outdoor_temp",
+    "indoor_hum", "outdoor_hum",
+    "wind_speed", "window_open", "fan_speed",
+    "CO2", "CO", "HCHO", "TVOC"
+]
 
-except KeyboardInterrupt:
-    print("Stopped by user")
-    client.disconnect()
+points = []
+for idx, row in df.iterrows():
+    try:
+        # timestamp를 tz-aware로
+        ts = row["timestamp"]
+        if ts.tzinfo is None:
+            ts = ts.tz_localize('Asia/Seoul')
+
+        point = Point("control").time(ts, WritePrecision.NS)
+
+        # field 추가
+        for f in columns:
+            val = row[f]
+            if pd.notnull(val):
+                point = point.field(f, float(val))
+
+        points.append(point)
+
+        # batch로 일정 개수마다 쓰기 (예: 500개씩)
+        if len(points) >= 500:
+            write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=points)
+            points = []
+
+    except Exception as e:
+        print(f"Error writing row {idx}: {e}")
+
+# 남은 포인트 쓰기
+if points:
+    write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=points)
+
+client.close()
+print("CSV → InfluxDB 업로드 완료!")

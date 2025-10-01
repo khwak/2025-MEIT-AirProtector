@@ -66,54 +66,64 @@ def get_current_status():
     return _current_status
 
 
-def main():
-    """메인 실행 루프"""
-    print("실내 환경 데이터 모니터링 및 자동 제어를 시작합니다.")
+# --- 경고 상태를 InfluxDB에 쓰는 핵심 함수 ---
+def write_alert_status(max_level_code: int, max_level_sensor: str):
+    """
+    모든 센서 중 가장 높은 경고 레벨을 'alert_status' 측정값에 기록합니다.
+    """
+    if not write_api:
+        print("ERROR: InfluxDB Write API가 초기화되지 않아 데이터 기록을 건너뜁니다.")
+        return
 
-    global _current_status  # 상태 업데이트 가능하게 설정
+    # Grafana 알림 쿼리가 사용하는 measurement와 field에 맞게 Point를 생성
+    point = Point("alert_status") \
+        .tag("host", "air_monitor_server") \
+        .tag("sensor", max_level_sensor) \
+        .field("level_code", max_level_code) \
+        .time(time.time_ns(), WritePrecision.NS)
+
+    try:
+        write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
+        print(f"INFO: 'alert_status' 기록 완료. (Level: {max_level_code}, Source: {max_level_sensor})")
+    except Exception as e:
+        print(f"ERROR: InfluxDB 쓰기 오류 발생: {e}")
+        
+
+def run_once():
+    """한 사이클만 실행되는 모니터링/제어 함수"""
+    print("실내 환경 데이터 모니터링 및 자동 제어 실행 (1회)")
+
+    global _current_status
     level_map = {"normal": 0, "warning": 1, "serious": 2}
-    required_fields = ["CO2", "CO", "HCHO", "TVOC"] 
+    required_fields = ["CO2", "CO", "HCHO", "TVOC"]
 
-    while True:
-        try:
-            # 1. 데이터 조회 모듈을 통해 최신 데이터 가져오기
-            print("\n--- 최신 데이터 조회 시작 ---")
-            processed_data = fetch_latest_data(required_fields)
-            
-            if processed_data:
-                print(f"조회된 데이터: {processed_data}")
+    try:
+        # 1. 데이터 조회
+        processed_data = fetch_latest_data(required_fields)
+        if not processed_data:
+            print("WARNING: 조회된 최신 데이터가 없습니다.")
+            return
 
-                # 2. 임계값 검사
-                results = checker.check(processed_data)
-                print(f"임계값 분석 결과: {results}")
+        print(f"조회된 데이터: {processed_data}")
 
-                # 3. Grafana Alert용 데이터 InfluxDB에 저장
-                if write_api and results:
-                    points_to_write = []
-                    # 모든 센서의 경고 레벨을 저장
-                    for field, data in results.items():
-                        if field in ["CO2", "CO", "HCHO", "TVOC"]: # 검사 대상 필드만
-                            level_code = level_map.get(data['level'], 0)
-                            
-                            point = (
-                                Point("alert_status") # 경고 상태를 저장할 새로운 measurement
-                                .tag("sensor", field) # CO2, CO 등을 태그로 지정
-                                .field("level_code", level_code) # 경고 레벨을 숫자로 저장 (0, 1, 2)
-                                .field("sensor_value", data['value']) # 실제 센서 값을 필드로 저장
-                            )
-                            points_to_write.append(point)
+        # 2. 임계값 검사
+        results = checker.check(processed_data)
+        print(f"임계값 분석 결과: {results}")
 
-                    if points_to_write:
-                        write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=points_to_write)
-                        print(f"--> 임계값 분석 결과 ({len(points_to_write)}개)를 InfluxDB 'alert_status'에 저장 완료.")
+        # 3. 최대 경고 레벨 결정
+        max_level_code = 0
+        max_level_sensor = "Normal"
+        for field, data in results.items():
+            current_level_code = level_map.get(data['level'], 0)
+            if current_level_code > max_level_code:
+                max_level_code = current_level_code
+                max_level_sensor = field
 
-                
-        except Exception as e:
-            print(f"오류가 발생했습니다: {e}")
-            
-        finally:
-            print(f"--- {PROCESS_INTERVAL_SECONDS}초 후 다음 작업을 시작합니다. ---")
-            time.sleep(PROCESS_INTERVAL_SECONDS)
+        # 4. InfluxDB에 경고 상태 기록
+        write_alert_status(max_level_code, max_level_sensor)
+        print(f"InfluxDB에 기록됨: Level {max_level_code} ({max_level_sensor})")
 
-if __name__ == "__main__":
-    main()
+        # 5. 자동 제어 로직 (생략 가능)
+
+    except Exception as e:
+        print(f"1회 실행 중 오류 발생: {e}")
