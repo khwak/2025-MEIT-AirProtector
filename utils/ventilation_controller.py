@@ -24,19 +24,45 @@ except Exception as e:
 
 
 # ---- 설정 ----
-MQTT_BROKER = "localhost"
+MQTT_BROKER = "192.168.137.1"
 MQTT_PORT = 1883
 MQTT_TOPIC = "actuators/control"
 PROCESS_INTERVAL_SECONDS = 300  # 5분
 
 # ---- 초기화 ----
 checker = ThresholdChecker()
-publisher = MqttPublisher(broker=MQTT_BROKER, port=MQTT_PORT, topic=MQTT_TOPIC)
+publisher = MqttPublisher(broker=MQTT_BROKER, port=MQTT_PORT, topic="fan/control")
 
 _current_status = {
     "window": 0,  # 창문 열림 정도
     "fan_speed": 0    # 환기팬 속도 
 }
+
+# _current_status 갱신
+def update_current_status_from_db():
+    """
+    InfluxDB에서 최신 창문/팬 상태를 가져와 _current_status를 갱신
+    """
+    global _current_status
+
+    try:
+        df = fetch_data()  # fetch_data()는 InfluxDB에서 최근 데이터 가져오는 함수
+        if df.empty:
+            print("DB에 데이터 없음. _current_status 유지")
+            return
+
+        latest_row = df.sort_values("timestamp").iloc[-1]
+
+        # DB 컬럼명에 맞춰 상태 가져오기
+        _current_status['window'] = int(latest_row.get('window_open', 0))
+        _current_status['fan_speed'] = int(latest_row.get('fan_speed', 0))
+
+        print(f"_current_status 갱신: {_current_status}")
+
+    except Exception as e:
+        print(f"_current_status 갱신 실패: {e}")
+
+
 
 def fetch_latest_data(required_fields):
     """
@@ -62,7 +88,7 @@ def get_current_status():
     Flask에서 /api/ventilation/controll 호출 시 사용
     여기서는 예시로 고정값을 반환.
     """
-    global _current_status
+    update_current_status_from_db()  # 호출 시마다 최신 상태로 갱신
     return _current_status
 
 

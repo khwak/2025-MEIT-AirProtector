@@ -78,8 +78,11 @@ def ventilation_manual_controll():
         return jsonify({"success": False, "error": "Invalid control type or level"}), 400
 
     global _current_status
-    _current_status[control_type if control_type=="window" else "fan_speed"] = level
+    # control_type 변환: "fan" → "fan_speed"
+    status_key = "window" if control_type == "window" else "fan_speed"
+    _current_status[status_key] = level
 
+    # MQTT 전송 payload
     payload = {
         "window_open": _current_status["window"],
         "fan_speed": _current_status["fan_speed"]
@@ -90,14 +93,20 @@ def ventilation_manual_controll():
             "manual_override": True,
             "control_status": payload 
         }
-        mqtt_publisher = MqttPublisher(broker="localhost", port=1883, topic="actuators/control")
+        mqtt_publisher = MqttPublisher(broker="192.168.137.1", port=1883, topic="fan/control")
         mqtt_publisher.publish_results(manual_data)
         print(f"Manual MQTT control sent: {payload}")
     except Exception as e:
         print(f"MQTT publish error: {e}")
         return jsonify({"success": False, "error": "MQTT publish failed"}), 500
 
-    return jsonify({"success": True, "control_type": control_type, "level": level})
+    return jsonify({
+        "success": True,
+        "control_type": control_type,
+        "level": level,
+        "current_status": _current_status
+    })
+
 
 
 

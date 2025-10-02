@@ -7,7 +7,7 @@ import pytz
 import sys
 
 # ---- MQTT 설정 ----
-MQTT_BROKER = "localhost"
+MQTT_BROKER = "192.168.137.1"
 MQTT_PORT = 1883
 MQTT_TOPIC = "actuators/control"
 
