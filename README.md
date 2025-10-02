@@ -34,7 +34,7 @@ project/
 └─ templates/
 ├─ admin.html # 관리자 화면
 └─ user.html # 사용자 화면
-
+```
 
 ---
 
