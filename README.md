@@ -8,6 +8,7 @@
 
 ## 프로젝트 구조
 
+```text
 project/
 │
 ├─ app.py # Flask 서버 메인
@@ -33,7 +34,7 @@ project/
 └─ templates/
 ├─ admin.html # 관리자 화면
 └─ user.html # 사용자 화면
-
+```
 
 ---
 
