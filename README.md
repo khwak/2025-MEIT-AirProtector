@@ -8,6 +8,7 @@
 
 ## 프로젝트 구조
 
+```text
 project/
 │
 ├─ app.py # Flask 서버 메인
