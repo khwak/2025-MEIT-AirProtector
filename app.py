@@ -5,6 +5,12 @@ from models.preprocessing import preprocess_sensor_data
 from models.ventilation_predictor import predict_remaining_minutes
 from models.anomaly_detector import detect_anomaly
 from utils.ventilation_controller import get_current_status
+from utils.mqtt_publish import MqttPublisher
+from utils.ventilation_controller import run_once  
+
+import threading
+from utils.mqtt_subscriber import start_subscriber
+
 
 # InfluxDB 클라이언트 관련 임포트 추가
 from influxdb_client import InfluxDBClient
@@ -30,12 +36,20 @@ app = Flask(__name__) #Flask 앱 객체를 생성.
 # InfluxDB 클라이언트 초기화
 try:
     client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
+    write_api = client.write_api()  # ← 여기서 write_api 생성
     query_api = client.query_api()
     print("InfluxDB 클라이언트 초기화 완료.")
 except Exception as e:
     print(f"InfluxDB 클라이언트 초기화 오류: {e}")
     client = None
+    write_api = None
     query_api = None
+
+# 수동 제어 상태 저장을 위한 전역 변수 초기화
+_current_status = {
+    "window": 0,       # 0: 닫힘, 1: 50%, 2: 100% 열림
+    "fan_speed": 0     # 0: 꺼짐, 1: 50%, 2: 100% 작동
+}
 
 # 창문/환기팬 상태 (자동/수동)
 @app.route("/api/ventilation/status", methods=["GET"])
@@ -46,9 +60,7 @@ def ventilation_controll():
         "fan_speed": int     # 환기팬 속도 
     }
     """
-    # TODO: 여기에서 실제 센서/DB에서 현재 상태를 가져오는 로직을 사용해야 합니다.
     status = get_current_status() 
-    
     return jsonify(status)
 
 # 창문/환기팬 상태 (수동)
@@ -56,16 +68,45 @@ def ventilation_controll():
 @app.route("/api/ventilation/manual", methods=["POST"])
 def ventilation_manual_controll():
     data = request.get_json()
-    control_type = data.get("control_type")  # "window" 또는 "fan"
-    level = data.get("level")                # 0, 1, 2 (0%, 50%, 100%)
+    if not data:
+        return jsonify({"success": False, "error": "Invalid JSON"}), 400
+
+    control_type = data.get("control_type")
+    level = data.get("level")
     
     if control_type not in ["window", "fan"] or level not in [0, 1, 2]:
-        return jsonify({"error": "Invalid control type or level"}), 400
+        return jsonify({"success": False, "error": "Invalid control type or level"}), 400
 
-    # TODO: 여기에 실제 MQTT/장치 제어 로직을 구현
-    print(f"Manual control request: {control_type} set to level {level}")
-    
-    return jsonify({"success": True, "control_type": control_type, "level": level})
+    global _current_status
+    # control_type 변환: "fan" → "fan_speed"
+    status_key = "window" if control_type == "window" else "fan_speed"
+    _current_status[status_key] = level
+
+    # MQTT 전송 payload
+    payload = {
+        "window_open": _current_status["window"],
+        "fan_speed": _current_status["fan_speed"]
+    }
+
+    try:
+        manual_data = {
+            "manual_override": True,
+            "control_status": payload 
+        }
+        mqtt_publisher = MqttPublisher(broker="192.168.137.1", port=1883, topic="fan/control")
+        mqtt_publisher.publish_results(manual_data)
+        print(f"Manual MQTT control sent: {payload}")
+    except Exception as e:
+        print(f"MQTT publish error: {e}")
+        return jsonify({"success": False, "error": "MQTT publish failed"}), 500
+
+    return jsonify({
+        "success": True,
+        "control_type": control_type,
+        "level": level,
+        "current_status": _current_status
+    })
+
 
 
 
@@ -116,12 +157,15 @@ def anomaly_results():
 @app.route('/api/alert/status', methods=['GET'])
 def get_alert_status():
     """
-    Grafana Alert Rule에 사용된 Flux 쿼리를 실행하여 현재 경고 레벨을 반환합니다.
-    Alert Condition: WHEN Last OF QUERY IS ABOVE 1
+    1회 모니터링/제어 실행 후 InfluxDB에서 최신 alert_status를 조회해 반환
     """
+    # 1. 최신 상태 업데이트
+    run_once()  # 한 사이클만 실행
+
+    # 2. InfluxDB에서 최근 5분 데이터 중 최대 level_code 조회
     if not query_api:
         return jsonify({"level_code": 0, "message": "API 서버 오류: InfluxDB 연결 실패"}), 500
-    
+
     # Grafana Alert Rule 쿼리 (최근 5분 데이터의 Max level_code)
     flux_query = f'''
     from(bucket: "{INFLUX_BUCKET}")
@@ -172,5 +216,14 @@ def user_page():
 def admin_page():
     return render_template("admin.html")
 
+# MQTT Subscriber를 별도 스레드에서 실행
+if write_api:
+    t = threading.Thread(target=start_subscriber, args=(write_api, INFLUX_BUCKET, INFLUX_ORG), daemon=True)
+    t.start()
+    print("MQTT Subscriber started in background.")
+else:
+    print("write_api가 초기화되지 않아 MQTT Subscriber를 시작할 수 없습니다.")
+
+
 if __name__ == "__main__":
-    app.run("0.0.0.0", port=5000, debug=True)
+    app.run("0.0.0.0", port=5000, debug=False)

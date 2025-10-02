@@ -24,8 +24,8 @@ def fetch_data():
     field_filter = " or ".join([f'r["_field"] == "{f}"' for f in fields])
     query = f'''
     from(bucket: "{INFLUX_BUCKET}")
-    |> range(start: 2025-09-29T09:30:00Z)  // 최근 30분(-30m)으로 나중에 바꾸기
-    |> filter(fn: (r) => r["_measurement"] == "environment")
+    |> range(start: -1h)  // 최근 1시간(-1h)
+    |> filter(fn: (r) => r["_measurement"] == "control")
     |> filter(fn: (r) => {field_filter})
     |> pivot(rowKey:["_time"], columnKey:["_field"], valueColumn:"_value")
     |> keep(columns: ["_time", {",".join([f'"{f}"' for f in fields])}])
@@ -43,6 +43,12 @@ def fetch_data():
         # 메타 정보 제거 (_time은 이미 timestamp로 rename 했으므로 안전)
         drop_cols = [c for c in df.columns if c.startswith("_") or c in ["result", "table"]]
         df = df.drop(columns=drop_cols, errors="ignore")
+
+        # 누락 데이터 처리
+        missing_fields = [f for f in fields if f not in df.columns]
+        for f in missing_fields:
+            # 누락된 열을 0.0으로 채워 추가
+            df[f] = 0.0 
 
         # 정렬
         df = df.sort_values("timestamp").reset_index(drop=True)

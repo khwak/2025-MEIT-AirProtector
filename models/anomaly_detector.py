@@ -16,7 +16,7 @@ BASE_DIR = os.path.dirname(__file__)
 scaler = joblib.load(os.path.join(BASE_DIR, "anomaly_scaler.pkl"))
 model = load_model(os.path.join(BASE_DIR, "anomaly_lstm_ae.h5"), compile=False)
 
-THRESHOLD = 0.275
+THRESHOLD = 0.2178
 
 
 # 2. 시퀀스 생성 함수
@@ -58,10 +58,13 @@ def detect_anomaly(processed: pd.DataFrame):
     timestamps = processed["timestamp"].iloc[SEQ_LENGTH-1:].reset_index(drop=True)
 
     for i, ts in enumerate(timestamps):
+        loss = losses[i]
+        if np.isnan(loss) or np.isinf(loss):
+            loss = None  # JSON에 안전하게 내려주기
         results[str(ts)] = {
-            "loss_mae": float(losses[i]),
+            "loss_mae": loss,
             "threshold": THRESHOLD,
-            "anomaly": bool(losses[i] > THRESHOLD)
+            "anomaly": bool(loss is not None and loss > THRESHOLD)
         }
 
     return results
