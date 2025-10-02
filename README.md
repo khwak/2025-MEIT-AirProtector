@@ -39,7 +39,9 @@ project/
 
 ## 시스템 아키텍처
 
-![System Architecture](https://raw.githubusercontent.com/khwak/for-image/main/meit_architec.png)
+<p align="center">
+<img width="1086" height="560" alt="Image" src="https://github.com/user-attachments/assets/4df97333-90bd-4797-8c44-54bac1fb0bc9" />
+</p>
 
 ---
 
